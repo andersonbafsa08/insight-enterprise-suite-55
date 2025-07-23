@@ -22,139 +22,66 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFrota } from "@/hooks/useFrota";
 
-interface Vehicle {
-  id: string;
-  placa: string;
-  modelo: string;
-  marca: string;
-  ano: number;
-  tipo: string;
-  status: 'disponivel' | 'em_uso' | 'manutencao';
-  quilometragem: number;
-  proximaRevisao: string;
-  combustivel: number; // percentual
-  responsavel?: string;
-  localizacao: string;
-}
-
-interface Maintenance {
-  id: string;
-  veiculoId: string;
-  veiculo: string;
-  tipo: string;
-  descricao: string;
-  data: string;
-  valor: number;
-  status: 'agendada' | 'em_andamento' | 'concluida';
-}
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    placa: "ABC-1234",
-    modelo: "Civic",
-    marca: "Honda",
-    ano: 2022,
-    tipo: "Sedan",
-    status: 'disponivel',
-    quilometragem: 45000,
-    proximaRevisao: "2024-04-15",
-    combustivel: 75,
-    localizacao: "Garagem Principal"
-  },
-  {
-    id: "2",
-    placa: "DEF-5678",
-    modelo: "Strada",
-    marca: "Fiat",
-    ano: 2021,
-    tipo: "Pickup",
-    status: 'em_uso',
-    quilometragem: 68000,
-    proximaRevisao: "2024-03-25",
-    combustivel: 40,
-    responsavel: "João Silva",
-    localizacao: "São Paulo - SP"
-  },
-  {
-    id: "3",
-    placa: "GHI-9012",
-    modelo: "Sprinter",
-    marca: "Mercedes",
-    ano: 2020,
-    tipo: "Van",
-    status: 'manutencao',
-    quilometragem: 120000,
-    proximaRevisao: "2024-05-10",
-    combustivel: 0,
-    localizacao: "Oficina Externa"
-  }
-];
-
-const mockMaintenance: Maintenance[] = [
-  {
-    id: "1",
-    veiculoId: "1",
-    veiculo: "Honda Civic - ABC-1234",
-    tipo: "Revisão Preventiva",
-    descricao: "Troca de óleo e filtros",
-    data: "2024-04-15",
-    valor: 350.00,
-    status: 'agendada'
-  },
-  {
-    id: "2",
-    veiculoId: "3",
-    veiculo: "Mercedes Sprinter - GHI-9012",
-    tipo: "Reparo",
-    descricao: "Substituição do motor de partida",
-    data: "2024-03-10",
-    valor: 850.00,
-    status: 'em_andamento'
-  }
-];
+// Interface já definida no hook useFrota - dados reais do Supabase
 
 export default function Fleet() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
-  const [maintenance, setMaintenance] = useState<Maintenance[]>(mockMaintenance);
+  const { veiculos, isLoading, createVeiculo, updateVeiculo, deleteVeiculo } = useFrota();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isAddVehicleOpen, setIsAddVehicleOpen] = useState(false);
-  const [isAddMaintenanceOpen, setIsAddMaintenanceOpen] = useState(false);
+  const [newVeiculo, setNewVeiculo] = useState({
+    modelo: "",
+    marca: "",
+    ano: new Date().getFullYear(),
+    placa: "",
+    tipo: "",
+    capacidade: "",
+    status: "Disponível" as const,
+    quilometragem: 0,
+    data_aquisicao: "",
+    valor_aquisicao: 0,
+    observacoes: ""
+  });
 
-  const filteredVehicles = vehicles.filter(vehicle => {
-    const matchesSearch = vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.marca.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredVeiculos = veiculos.filter(veiculo => {
+    const matchesSearch = veiculo.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      veiculo.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      veiculo.marca.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || vehicle.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || veiculo.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: Vehicle['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'disponivel': return 'default';
-      case 'em_uso': return 'secondary';
-      case 'manutencao': return 'destructive';
+      case 'Disponível': return 'default';
+      case 'Em Uso': return 'secondary';
+      case 'Manutenção': return 'destructive';
       default: return 'default';
     }
   };
 
-  const getStatusLabel = (status: Vehicle['status']) => {
-    switch (status) {
-      case 'disponivel': return 'Disponível';
-      case 'em_uso': return 'Em Uso';
-      case 'manutencao': return 'Manutenção';
-      default: return status;
+  const handleCreateVeiculo = async () => {
+    const result = await createVeiculo(newVeiculo);
+    if (result.data) {
+      setIsAddVehicleOpen(false);
+      setNewVeiculo({
+        modelo: "",
+        marca: "",
+        ano: new Date().getFullYear(),
+        placa: "",
+        tipo: "",
+        capacidade: "",
+        status: "Disponível",
+        quilometragem: 0,
+        data_aquisicao: "",
+        valor_aquisicao: 0,
+        observacoes: ""
+      });
     }
-  };
-
-  const getFuelColor = (level: number) => {
-    if (level <= 20) return 'text-destructive';
-    if (level <= 50) return 'text-yellow-600';
-    return 'text-green-600';
   };
 
   return (
@@ -167,72 +94,6 @@ export default function Fleet() {
         </div>
         
         <div className="flex gap-2">
-          <Dialog open={isAddMaintenanceOpen} onOpenChange={setIsAddMaintenanceOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Wrench className="h-4 w-4" />
-                Agendar Manutenção
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Agendar Manutenção</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="veiculo">Veículo</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o veículo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicles.map(vehicle => (
-                        <SelectItem key={vehicle.id} value={vehicle.id}>
-                          {vehicle.marca} {vehicle.modelo} - {vehicle.placa}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tipo">Tipo de Manutenção</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="preventiva">Revisão Preventiva</SelectItem>
-                      <SelectItem value="corretiva">Manutenção Corretiva</SelectItem>
-                      <SelectItem value="reparo">Reparo</SelectItem>
-                      <SelectItem value="lavagem">Lavagem</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <Input id="descricao" placeholder="Descreva o serviço..." />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="data">Data</Label>
-                    <Input id="data" type="date" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="valor">Valor Estimado (R$)</Label>
-                    <Input id="valor" type="number" placeholder="0.00" step="0.01" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddMaintenanceOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => setIsAddMaintenanceOpen(false)}>
-                  Agendar
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           <Dialog open={isAddVehicleOpen} onOpenChange={setIsAddVehicleOpen}>
             <DialogTrigger asChild>
@@ -249,21 +110,25 @@ export default function Fleet() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="placa">Placa</Label>
-                    <Input id="placa" placeholder="ABC-1234" />
+                    <Input 
+                      id="placa" 
+                      value={newVeiculo.placa}
+                      onChange={(e) => setNewVeiculo({...newVeiculo, placa: e.target.value})}
+                      placeholder="ABC-1234" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tipo">Tipo</Label>
-                    <Select>
+                    <Select value={newVeiculo.tipo} onValueChange={(value) => setNewVeiculo({...newVeiculo, tipo: value})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="sedan">Sedan</SelectItem>
-                        <SelectItem value="hatch">Hatch</SelectItem>
-                        <SelectItem value="suv">SUV</SelectItem>
-                        <SelectItem value="pickup">Pickup</SelectItem>
-                        <SelectItem value="van">Van</SelectItem>
-                        <SelectItem value="caminhao">Caminhão</SelectItem>
+                        <SelectItem value="UMB">UMB</SelectItem>
+                        <SelectItem value="BAU">BAU</SelectItem>
+                        <SelectItem value="APOIO">APOIO</SelectItem>
+                        <SelectItem value="VAN">Van</SelectItem>
+                        <SelectItem value="CAMINHAO">Caminhão</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -271,25 +136,52 @@ export default function Fleet() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="marca">Marca</Label>
-                    <Input id="marca" placeholder="Ex: Honda" />
+                    <Input 
+                      id="marca" 
+                      value={newVeiculo.marca}
+                      onChange={(e) => setNewVeiculo({...newVeiculo, marca: e.target.value})}
+                      placeholder="Ex: Honda" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="modelo">Modelo</Label>
-                    <Input id="modelo" placeholder="Ex: Civic" />
+                    <Input 
+                      id="modelo" 
+                      value={newVeiculo.modelo}
+                      onChange={(e) => setNewVeiculo({...newVeiculo, modelo: e.target.value})}
+                      placeholder="Ex: Civic" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="ano">Ano</Label>
-                    <Input id="ano" type="number" placeholder="2024" />
+                    <Input 
+                      id="ano" 
+                      type="number" 
+                      value={newVeiculo.ano}
+                      onChange={(e) => setNewVeiculo({...newVeiculo, ano: parseInt(e.target.value) || new Date().getFullYear()})}
+                      placeholder="2024" 
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quilometragem">Quilometragem</Label>
-                    <Input id="quilometragem" type="number" placeholder="0" />
+                    <Input 
+                      id="quilometragem" 
+                      type="number" 
+                      value={newVeiculo.quilometragem}
+                      onChange={(e) => setNewVeiculo({...newVeiculo, quilometragem: parseInt(e.target.value) || 0})}
+                      placeholder="0" 
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="localizacao">Localização</Label>
-                    <Input id="localizacao" placeholder="Garagem Principal" />
+                    <Label htmlFor="capacidade">Capacidade</Label>
+                    <Input 
+                      id="capacidade" 
+                      value={newVeiculo.capacidade}
+                      onChange={(e) => setNewVeiculo({...newVeiculo, capacidade: e.target.value})}
+                      placeholder="Ex: 5 passageiros" 
+                    />
                   </div>
                 </div>
               </div>
@@ -297,7 +189,7 @@ export default function Fleet() {
                 <Button variant="outline" onClick={() => setIsAddVehicleOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={() => setIsAddVehicleOpen(false)}>
+                <Button onClick={handleCreateVeiculo} disabled={isLoading}>
                   Salvar
                 </Button>
               </div>
@@ -314,7 +206,7 @@ export default function Fleet() {
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{vehicles.length}</div>
+            <div className="text-2xl font-bold">{veiculos.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -324,7 +216,7 @@ export default function Fleet() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {vehicles.filter(v => v.status === 'disponivel').length}
+              {veiculos.filter(v => v.status === 'Disponível').length}
             </div>
           </CardContent>
         </Card>
@@ -335,7 +227,7 @@ export default function Fleet() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {vehicles.filter(v => v.status === 'em_uso').length}
+              {veiculos.filter(v => v.status === 'Em Uso').length}
             </div>
           </CardContent>
         </Card>
@@ -346,7 +238,7 @@ export default function Fleet() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {vehicles.filter(v => v.status === 'manutencao').length}
+              {veiculos.filter(v => v.status === 'Manutenção').length}
             </div>
           </CardContent>
         </Card>
@@ -374,12 +266,12 @@ export default function Fleet() {
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filtrar por status" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="disponivel">Disponível</SelectItem>
-                <SelectItem value="em_uso">Em Uso</SelectItem>
-                <SelectItem value="manutencao">Manutenção</SelectItem>
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="Disponível">Disponível</SelectItem>
+                  <SelectItem value="Em Uso">Em Uso</SelectItem>
+                  <SelectItem value="Manutenção">Manutenção</SelectItem>
+                </SelectContent>
             </Select>
           </div>
 
@@ -401,43 +293,26 @@ export default function Fleet() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredVehicles.map((vehicle) => (
-                    <TableRow key={vehicle.id}>
-                      <TableCell className="font-medium">{vehicle.placa}</TableCell>
+                  {filteredVeiculos.map((veiculo) => (
+                    <TableRow key={veiculo.id}>
+                      <TableCell className="font-medium">{veiculo.placa}</TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{vehicle.marca} {vehicle.modelo}</div>
-                          <div className="text-sm text-muted-foreground">{vehicle.ano}</div>
+                          <div className="font-medium">{veiculo.marca} {veiculo.modelo}</div>
+                          <div className="text-sm text-muted-foreground">{veiculo.ano}</div>
                         </div>
                       </TableCell>
-                      <TableCell>{vehicle.tipo}</TableCell>
+                      <TableCell>{veiculo.tipo}</TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(vehicle.status)}>
-                          {getStatusLabel(vehicle.status)}
+                        <Badge variant={getStatusColor(veiculo.status)}>
+                          {veiculo.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Fuel className={`h-4 w-4 ${getFuelColor(vehicle.combustivel)}`} />
-                          <span className={getFuelColor(vehicle.combustivel)}>
-                            {vehicle.combustivel}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{vehicle.quilometragem.toLocaleString()} km</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {new Date(vehicle.proximaRevisao).toLocaleDateString('pt-BR')}
-                        </div>
-                      </TableCell>
-                      <TableCell>{vehicle.responsavel || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          {vehicle.localizacao}
-                        </div>
-                      </TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>{veiculo.quilometragem?.toLocaleString() || 0} km</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -447,46 +322,15 @@ export default function Fleet() {
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4">
-          {/* Maintenance Table */}
+          {/* Maintenance Table - Funcionalidade removida temporariamente */}
           <Card>
             <CardHeader>
-              <CardTitle>Manutenções Programadas</CardTitle>
+              <CardTitle>Manutenções</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Veículo</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {maintenance.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.veiculo}</TableCell>
-                      <TableCell>{item.tipo}</TableCell>
-                      <TableCell>{item.descricao}</TableCell>
-                      <TableCell>
-                        {new Date(item.data).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell>R$ {item.valor.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          item.status === 'agendada' ? 'secondary' :
-                          item.status === 'em_andamento' ? 'default' : 'destructive'
-                        }>
-                          {item.status === 'agendada' ? 'Agendada' :
-                           item.status === 'em_andamento' ? 'Em Andamento' : 'Concluída'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardContent>
+              <p className="text-muted-foreground text-center py-8">
+                Funcionalidade de manutenções será implementada em breve.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Filter, Download, MoreHorizontal, Calendar, Users, DollarSign } from "lucide-react";
+import { Plus, Search, Download, MoreHorizontal, Calendar, Users, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,100 +29,72 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useSolicitacoes } from "@/hooks/useSolicitacoes";
 
-interface Request {
-  id: string;
-  numeroSolicitacao: string;
-  cliente: string;
-  hotel: string;
-  numeroPessoas: number;
-  diarias: number;
-  valorUnitario: number;
-  valorTotal: number;
-  status: 'pendente' | 'completo';
-  dataInicio: string;
-  dataFim: string;
-  observacoes?: string;
-}
-
-const mockRequests: Request[] = [
-  {
-    id: "1",
-    numeroSolicitacao: "SOL-2024-001",
-    cliente: "Hotel Central Plaza",
-    hotel: "Plaza Executive",
-    numeroPessoas: 2,
-    diarias: 3,
-    valorUnitario: 180.00,
-    valorTotal: 1080.00,
-    status: 'pendente',
-    dataInicio: "2024-03-01",
-    dataFim: "2024-03-04",
-    observacoes: "Quarto duplo com café da manhã"
-  },
-  {
-    id: "2",
-    numeroSolicitacao: "SOL-2024-002",
-    cliente: "Pousada Vista Alegre",
-    hotel: "Vista Copacabana",
-    numeroPessoas: 1,
-    diarias: 5,
-    valorUnitario: 220.00,
-    valorTotal: 1100.00,
-    status: 'completo',
-    dataInicio: "2024-02-15",
-    dataFim: "2024-02-20",
-    observacoes: "Vista para o mar"
-  }
-];
+// Interface já definida no hook useSolicitacoes
 
 export default function Requests() {
-  const [requests, setRequests] = useState<Request[]>(mockRequests);
-  const [activeRequests, setActiveRequests] = useState<Request[]>(
-    mockRequests.filter(r => r.status === 'pendente')
-  );
+  const { 
+    solicitacoes, 
+    isLoading, 
+    createSolicitacao, 
+    updateSolicitacao, 
+    deleteSolicitacao,
+    getSolicitacoesPorStatus 
+  } = useSolicitacoes();
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [newSolicitacao, setNewSolicitacao] = useState({
+    tipo: "Hotel",
+    titulo: "",
+    descricao: "",
+    prioridade: "Média" as const,
+    status: "Pendente" as const,
+    data_necessidade: "",
+    observacoes: ""
+  });
   const { toast } = useToast();
 
-  const filteredActiveRequests = activeRequests.filter(request =>
-    request.numeroSolicitacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.hotel.toLowerCase().includes(searchTerm.toLowerCase())
+  const activeSolicitacoes = getSolicitacoesPorStatus("Pendente");
+  const allSolicitacoes = solicitacoes;
+
+  const filteredActiveSolicitacoes = activeSolicitacoes.filter(solicitacao =>
+    solicitacao.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    solicitacao.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    solicitacao.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredHistoryRequests = requests.filter(request => {
-    const matchesSearch = request.numeroSolicitacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.hotel.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredHistorySolicitacoes = allSolicitacoes.filter(solicitacao => {
+    const matchesSearch = solicitacao.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      solicitacao.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      solicitacao.descricao.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filterStatus === "all" || request.status === filterStatus;
+    const matchesStatus = filterStatus === "all" || solicitacao.status === filterStatus;
     
     return matchesSearch && matchesStatus;
   });
 
-  const handleCompleteRequest = (requestId: string) => {
-    setActiveRequests(prev => prev.filter(r => r.id !== requestId));
-    setRequests(prev => prev.map(r => 
-      r.id === requestId ? { ...r, status: 'completo' as const } : r
-    ));
-    toast({
-      title: "Solicitação finalizada",
-      description: "A solicitação foi movida para o histórico.",
-    });
+  const handleCompleteRequest = async (requestId: string) => {
+    await updateSolicitacao(requestId, { status: "Aprovada" });
   };
 
-  const handleReturnToActive = (requestId: string) => {
-    const request = requests.find(r => r.id === requestId);
-    if (request) {
-      setActiveRequests(prev => [...prev, { ...request, status: 'pendente' }]);
-      setRequests(prev => prev.map(r => 
-        r.id === requestId ? { ...r, status: 'pendente' as const } : r
-      ));
-      toast({
-        title: "Solicitação reativada",
-        description: "A solicitação foi retornada para a lista ativa.",
+  const handleReturnToActive = async (requestId: string) => {
+    await updateSolicitacao(requestId, { status: "Pendente" });
+  };
+
+  const handleCreateSolicitacao = async () => {
+    const result = await createSolicitacao(newSolicitacao);
+    if (result.data) {
+      setIsNewRequestOpen(false);
+      setNewSolicitacao({
+        tipo: "Hotel",
+        titulo: "",
+        descricao: "",
+        prioridade: "Média",
+        status: "Pendente",
+        data_necessidade: "",
+        observacoes: ""
       });
     }
   };
@@ -132,8 +104,8 @@ export default function Requests() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Solicitações de Hotéis</h1>
-          <p className="text-muted-foreground">Controle de fluxo de solicitações e pagamentos</p>
+          <h1 className="text-3xl font-bold text-foreground">Solicitações</h1>
+          <p className="text-muted-foreground">Controle de fluxo de solicitações gerais</p>
         </div>
         
         <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
@@ -143,82 +115,92 @@ export default function Requests() {
               Nova Solicitação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Nova Solicitação de Hotel</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cliente">Cliente</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Hotel Central Plaza</SelectItem>
-                      <SelectItem value="2">Pousada Vista Alegre</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Nova Solicitação</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo">Tipo</Label>
+                    <Select value={newSolicitacao.tipo} onValueChange={(value) => setNewSolicitacao({...newSolicitacao, tipo: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Hotel">Hotel</SelectItem>
+                        <SelectItem value="Transporte">Transporte</SelectItem>
+                        <SelectItem value="Material">Material</SelectItem>
+                        <SelectItem value="Serviço">Serviço</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prioridade">Prioridade</Label>
+                    <Select value={newSolicitacao.prioridade} onValueChange={(value) => setNewSolicitacao({...newSolicitacao, prioridade: value as any})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a prioridade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Baixa">Baixa</SelectItem>
+                        <SelectItem value="Média">Média</SelectItem>
+                        <SelectItem value="Alta">Alta</SelectItem>
+                        <SelectItem value="Urgente">Urgente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="hotel">Hotel</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o hotel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="h1">Plaza Executive</SelectItem>
-                      <SelectItem value="h2">Vista Copacabana</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="titulo">Título</Label>
+                  <Input 
+                    id="titulo" 
+                    value={newSolicitacao.titulo}
+                    onChange={(e) => setNewSolicitacao({...newSolicitacao, titulo: e.target.value})}
+                    placeholder="Título da solicitação..." 
+                  />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pessoas">Número de Pessoas</Label>
-                  <Input id="pessoas" type="number" placeholder="1" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="diarias">Diárias</Label>
-                  <Input id="diarias" type="number" placeholder="1" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="valor">Valor Unitário</Label>
-                  <Input id="valor" type="number" placeholder="0.00" step="0.01" />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Data de Início</Label>
-                  <Input id="dataInicio" type="date" />
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <Input 
+                    id="descricao" 
+                    value={newSolicitacao.descricao}
+                    onChange={(e) => setNewSolicitacao({...newSolicitacao, descricao: e.target.value})}
+                    placeholder="Descrição detalhada..." 
+                  />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="dataFim">Data de Fim</Label>
-                  <Input id="dataFim" type="date" />
+                  <Label htmlFor="data_necessidade">Data Necessária</Label>
+                  <Input 
+                    id="data_necessidade" 
+                    type="date"
+                    value={newSolicitacao.data_necessidade}
+                    onChange={(e) => setNewSolicitacao({...newSolicitacao, data_necessidade: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="observacoes">Observações</Label>
+                  <Input 
+                    id="observacoes" 
+                    value={newSolicitacao.observacoes}
+                    onChange={(e) => setNewSolicitacao({...newSolicitacao, observacoes: e.target.value})}
+                    placeholder="Observações adicionais..." 
+                  />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações</Label>
-                <Input id="observacoes" placeholder="Observações adicionais..." />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsNewRequestOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateSolicitacao} disabled={isLoading}>
+                  Criar Solicitação
+                </Button>
               </div>
-
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium">Valor Total: R$ 0,00</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsNewRequestOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={() => setIsNewRequestOpen(false)}>
-                Criar Solicitação
-              </Button>
-            </div>
-          </DialogContent>
+            </DialogContent>
         </Dialog>
       </div>
 
@@ -230,28 +212,28 @@ export default function Requests() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeRequests.length}</div>
+            <div className="text-2xl font-bold">{activeSolicitacoes.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Pessoas</CardTitle>
+            <CardTitle className="text-sm font-medium">Aprovadas</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {activeRequests.reduce((acc, req) => acc + req.numeroPessoas, 0)}
+              {getSolicitacoesPorStatus("Aprovada").length}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total Ativo</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Geral</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {activeRequests.reduce((acc, req) => acc + req.valorTotal, 0).toFixed(2)}
+              {allSolicitacoes.length}
             </div>
           </CardContent>
         </Card>
@@ -295,21 +277,20 @@ export default function Requests() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredActiveRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.numeroSolicitacao}</TableCell>
-                      <TableCell>{request.cliente}</TableCell>
-                      <TableCell>{request.hotel}</TableCell>
-                      <TableCell>{request.numeroPessoas}</TableCell>
-                      <TableCell>{request.diarias}</TableCell>
-                      <TableCell>R$ {request.valorTotal.toFixed(2)}</TableCell>
+                  {filteredActiveSolicitacoes.map((solicitacao) => (
+                    <TableRow key={solicitacao.id}>
+                      <TableCell className="font-medium">{solicitacao.id.slice(0, 8)}</TableCell>
+                      <TableCell>{solicitacao.tipo}</TableCell>
+                      <TableCell>{solicitacao.titulo}</TableCell>
+                      <TableCell>{solicitacao.prioridade}</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell>
-                        {new Date(request.dataInicio).toLocaleDateString('pt-BR')} - {' '}
-                        {new Date(request.dataFim).toLocaleDateString('pt-BR')}
+                        {solicitacao.data_necessidade ? new Date(solicitacao.data_necessidade).toLocaleDateString('pt-BR') : '-'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={request.status === 'pendente' ? 'destructive' : 'default'}>
-                          {request.status === 'pendente' ? 'Pendente' : 'Completo'}
+                        <Badge variant={solicitacao.status === 'Pendente' ? 'destructive' : 'default'}>
+                          {solicitacao.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -320,10 +301,8 @@ export default function Requests() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Gerenciar Anexos</DropdownMenuItem>
-                            <DropdownMenuItem>Gerenciar NF</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleCompleteRequest(request.id)}>
-                              Finalizar
+                            <DropdownMenuItem onClick={() => handleCompleteRequest(solicitacao.id)}>
+                              Aprovar
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">
                               Excluir
@@ -385,21 +364,20 @@ export default function Requests() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredHistoryRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.numeroSolicitacao}</TableCell>
-                      <TableCell>{request.cliente}</TableCell>
-                      <TableCell>{request.hotel}</TableCell>
-                      <TableCell>{request.numeroPessoas}</TableCell>
-                      <TableCell>{request.diarias}</TableCell>
-                      <TableCell>R$ {request.valorTotal.toFixed(2)}</TableCell>
+                  {filteredHistorySolicitacoes.map((solicitacao) => (
+                    <TableRow key={solicitacao.id}>
+                      <TableCell className="font-medium">{solicitacao.id.slice(0, 8)}</TableCell>
+                      <TableCell>{solicitacao.tipo}</TableCell>
+                      <TableCell>{solicitacao.titulo}</TableCell>
+                      <TableCell>{solicitacao.prioridade}</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell>
-                        {new Date(request.dataInicio).toLocaleDateString('pt-BR')} - {' '}
-                        {new Date(request.dataFim).toLocaleDateString('pt-BR')}
+                        {solicitacao.data_necessidade ? new Date(solicitacao.data_necessidade).toLocaleDateString('pt-BR') : '-'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={request.status === 'pendente' ? 'destructive' : 'default'}>
-                          {request.status === 'pendente' ? 'Pendente' : 'Completo'}
+                        <Badge variant={solicitacao.status === 'Pendente' ? 'destructive' : 'default'}>
+                          {solicitacao.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -410,8 +388,8 @@ export default function Requests() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {request.status === 'completo' && (
-                              <DropdownMenuItem onClick={() => handleReturnToActive(request.id)}>
+                            {solicitacao.status === 'Aprovada' && (
+                              <DropdownMenuItem onClick={() => handleReturnToActive(solicitacao.id)}>
                                 Retornar ao Ativo
                               </DropdownMenuItem>
                             )}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Filter, MessageCircle, Edit, Trash2, Building } from "lucide-react";
+import { Plus, Search, MessageCircle, Edit, Trash2, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,107 +28,73 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { useColaboradores } from "@/hooks/useColaboradores";
 
-interface Employee {
-  id: string;
-  nome: string;
-  cpf: string;
-  email: string;
-  telefone: string;
-  funcao: string;
-  filial: string;
-  banco: string;
-  agencia: string;
-  conta: string;
-  pix: string;
-  valorDiaria: number;
-  valorPernoite: number;
-  ativo: boolean;
-}
+// Interface já definida no hook useColaboradores
 
-const mockEmployees: Employee[] = [
-  {
-    id: "1",
-    nome: "João Silva",
-    cpf: "123.456.789-00",
-    email: "joao.silva@empresa.com",
-    telefone: "(11) 99999-9999",
-    funcao: "Gerente de Projetos",
-    filial: "São Paulo",
-    banco: "Banco do Brasil",
-    agencia: "1234-5",
-    conta: "12345-6",
-    pix: "joao.silva@empresa.com",
-    valorDiaria: 150.00,
-    valorPernoite: 200.00,
-    ativo: true
-  },
-  {
-    id: "2",
-    nome: "Maria Santos",
-    cpf: "987.654.321-00",
-    email: "maria.santos@empresa.com",
-    telefone: "(11) 88888-8888",
-    funcao: "Analista de Sistemas",
-    filial: "São Paulo",
-    banco: "Caixa Econômica",
-    agencia: "5678-9",
-    conta: "98765-4",
-    pix: "(11) 88888-8888",
-    valorDiaria: 120.00,
-    valorPernoite: 180.00,
-    ativo: true
-  },
-  {
-    id: "3",
-    nome: "Pedro Costa",
-    cpf: "456.789.123-00",
-    email: "pedro.costa@empresa.com",
-    telefone: "(21) 77777-7777",
-    funcao: "Coordenador",
-    filial: "Rio de Janeiro",
-    banco: "Itaú",
-    agencia: "9876-5",
-    conta: "54321-0",
-    pix: "pedro.costa@empresa.com",
-    valorDiaria: 130.00,
-    valorPernoite: 190.00,
-    ativo: true
-  }
-];
-
-const filiais = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Porto Alegre"];
+const departamentos = ["Administrativo", "Operacional", "Vendas", "RH", "TI"];
 
 export default function Employees() {
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const { colaboradores, isLoading, createColaborador, updateColaborador, deleteColaborador } = useColaboradores();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFilial, setSelectedFilial] = useState<string>("all");
+  const [selectedDepartamento, setSelectedDepartamento] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newColaborador, setNewColaborador] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    cpf: "",
+    cargo: "",
+    departamento: "",
+    data_admissao: "",
+    salario: 0,
+    endereco: "",
+    cidade: "",
+    estado: "",
+    cep: "",
+    status: "Ativo" as const
+  });
   const { toast } = useToast();
 
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.funcao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredColaboradores = colaboradores.filter(colaborador => {
+    const matchesSearch = colaborador.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (colaborador.cargo?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (colaborador.email?.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesFilial = selectedFilial === "all" || employee.filial === selectedFilial;
+    const matchesDepartamento = selectedDepartamento === "all" || colaborador.departamento === selectedDepartamento;
     
-    return matchesSearch && matchesFilial && employee.ativo;
+    return matchesSearch && matchesDepartamento && colaborador.status === "Ativo";
   });
 
-  const groupedEmployees = filiais.reduce((acc, filial) => {
-    acc[filial] = filteredEmployees.filter(emp => emp.filial === filial);
+  const groupedColaboradores = departamentos.reduce((acc, departamento) => {
+    acc[departamento] = filteredColaboradores.filter(emp => emp.departamento === departamento);
     return acc;
-  }, {} as Record<string, Employee[]>);
+  }, {} as Record<string, any[]>);
 
-  const handleDeleteEmployee = (employeeId: string) => {
-    setEmployees(prev => prev.map(emp => 
-      emp.id === employeeId ? { ...emp, ativo: false } : emp
-    ));
-    toast({
-      title: "Colaborador removido",
-      description: "Colaborador foi desativado com sucesso.",
-    });
+  const handleDeleteColaborador = async (colaboradorId: string) => {
+    await deleteColaborador(colaboradorId);
+  };
+
+  const handleCreateColaborador = async () => {
+    const result = await createColaborador(newColaborador);
+    if (result.data) {
+      setIsAddDialogOpen(false);
+      setNewColaborador({
+        nome: "",
+        email: "",
+        telefone: "",
+        cpf: "",
+        cargo: "",
+        departamento: "",
+        data_admissao: "",
+        salario: 0,
+        endereco: "",
+        cidade: "",
+        estado: "",
+        cep: "",
+        status: "Ativo"
+      });
+    }
   };
 
   const openWhatsApp = (phone: string) => {
@@ -156,97 +122,150 @@ export default function Employees() {
             <DialogHeader>
               <DialogTitle>Novo Colaborador</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-6 py-4">
-              {/* Dados Pessoais */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Dados Pessoais</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome">Nome Completo</Label>
-                    <Input id="nome" placeholder="Digite o nome completo..." />
+              <div className="grid gap-6 py-4">
+                {/* Dados Pessoais */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Dados Pessoais</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nome">Nome Completo</Label>
+                      <Input 
+                        id="nome" 
+                        value={newColaborador.nome}
+                        onChange={(e) => setNewColaborador({...newColaborador, nome: e.target.value})}
+                        placeholder="Digite o nome completo..." 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF</Label>
+                      <Input 
+                        id="cpf" 
+                        value={newColaborador.cpf}
+                        onChange={(e) => setNewColaborador({...newColaborador, cpf: e.target.value})}
+                        placeholder="000.000.000-00" 
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input id="cpf" placeholder="000.000.000-00" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mail</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={newColaborador.email}
+                        onChange={(e) => setNewColaborador({...newColaborador, email: e.target.value})}
+                        placeholder="email@empresa.com" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telefone">Telefone</Label>
+                      <Input 
+                        id="telefone" 
+                        value={newColaborador.telefone}
+                        onChange={(e) => setNewColaborador({...newColaborador, telefone: e.target.value})}
+                        placeholder="(11) 99999-9999" 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cargo">Cargo</Label>
+                      <Input 
+                        id="cargo" 
+                        value={newColaborador.cargo}
+                        onChange={(e) => setNewColaborador({...newColaborador, cargo: e.target.value})}
+                        placeholder="Digite o cargo..." 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="departamento">Departamento</Label>
+                      <Select value={newColaborador.departamento} onValueChange={(value) => setNewColaborador({...newColaborador, departamento: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o departamento" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departamentos.map(departamento => (
+                            <SelectItem key={departamento} value={departamento}>{departamento}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="data_admissao">Data de Admissão</Label>
+                      <Input 
+                        id="data_admissao" 
+                        type="date"
+                        value={newColaborador.data_admissao}
+                        onChange={(e) => setNewColaborador({...newColaborador, data_admissao: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="salario">Salário</Label>
+                      <Input 
+                        id="salario" 
+                        type="number"
+                        value={newColaborador.salario}
+                        onChange={(e) => setNewColaborador({...newColaborador, salario: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00" 
+                        step="0.01" 
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input id="email" type="email" placeholder="email@empresa.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone</Label>
-                    <Input id="telefone" placeholder="(11) 99999-9999" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="funcao">Função</Label>
-                    <Input id="funcao" placeholder="Digite a função..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="filial">Filial</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a filial" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filiais.map(filial => (
-                          <SelectItem key={filial} value={filial}>{filial}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
 
-              {/* Dados Bancários */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Dados Bancários</h3>
-                <div className="grid grid-cols-3 gap-4">
+                {/* Endereço */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Endereço</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="banco">Banco</Label>
-                    <Input id="banco" placeholder="Nome do banco..." />
+                    <Label htmlFor="endereco">Endereço</Label>
+                    <Input 
+                      id="endereco" 
+                      value={newColaborador.endereco}
+                      onChange={(e) => setNewColaborador({...newColaborador, endereco: e.target.value})}
+                      placeholder="Rua, número..." 
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="agencia">Agência</Label>
-                    <Input id="agencia" placeholder="0000-0" />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cidade">Cidade</Label>
+                      <Input 
+                        id="cidade" 
+                        value={newColaborador.cidade}
+                        onChange={(e) => setNewColaborador({...newColaborador, cidade: e.target.value})}
+                        placeholder="Cidade" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="estado">Estado</Label>
+                      <Input 
+                        id="estado" 
+                        value={newColaborador.estado}
+                        onChange={(e) => setNewColaborador({...newColaborador, estado: e.target.value})}
+                        placeholder="UF" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cep">CEP</Label>
+                      <Input 
+                        id="cep" 
+                        value={newColaborador.cep}
+                        onChange={(e) => setNewColaborador({...newColaborador, cep: e.target.value})}
+                        placeholder="00000-000" 
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="conta">Conta</Label>
-                    <Input id="conta" placeholder="00000-0" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pix">Chave PIX</Label>
-                  <Input id="pix" placeholder="E-mail, telefone ou CPF..." />
                 </div>
               </div>
-
-              {/* Valores */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Valores de Diária</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="valorDiaria">Valor Diária (R$)</Label>
-                    <Input id="valorDiaria" type="number" placeholder="0.00" step="0.01" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="valorPernoite">Valor Pernoite (R$)</Label>
-                    <Input id="valorPernoite" type="number" placeholder="0.00" step="0.01" />
-                  </div>
-                </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateColaborador} disabled={isLoading}>
+                  Salvar
+                </Button>
               </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={() => setIsAddDialogOpen(false)}>
-                Salvar
-              </Button>
-            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -259,17 +278,17 @@ export default function Employees() {
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{employees.filter(e => e.ativo).length}</div>
+            <div className="text-2xl font-bold">{colaboradores.filter(c => c.status === "Ativo").length}</div>
           </CardContent>
         </Card>
-        {filiais.map(filial => (
-          <Card key={filial}>
+        {departamentos.slice(0, 3).map(departamento => (
+          <Card key={departamento}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{filial}</CardTitle>
+              <CardTitle className="text-sm font-medium">{departamento}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {employees.filter(e => e.filial === filial && e.ativo).length}
+                {colaboradores.filter(c => c.departamento === departamento && c.status === "Ativo").length}
               </div>
             </CardContent>
           </Card>
@@ -287,29 +306,29 @@ export default function Employees() {
             className="pl-10"
           />
         </div>
-        <Select value={selectedFilial} onValueChange={setSelectedFilial}>
+        <Select value={selectedDepartamento} onValueChange={setSelectedDepartamento}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por filial" />
+            <SelectValue placeholder="Filtrar por departamento" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as filiais</SelectItem>
-            {filiais.map(filial => (
-              <SelectItem key={filial} value={filial}>{filial}</SelectItem>
+            <SelectItem value="all">Todos os departamentos</SelectItem>
+            {departamentos.map(departamento => (
+              <SelectItem key={departamento} value={departamento}>{departamento}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Employees by Branch */}
-      <Accordion type="multiple" defaultValue={filiais} className="space-y-4">
-        {filiais.map(filial => (
-          <AccordionItem key={filial} value={filial}>
+      {/* Employees by Department */}
+      <Accordion type="multiple" defaultValue={departamentos} className="space-y-4">
+        {departamentos.map(departamento => (
+          <AccordionItem key={departamento} value={departamento}>
             <AccordionTrigger className="text-lg font-semibold">
               <div className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
-                {filial}
+                {departamento}
                 <Badge variant="secondary">
-                  {groupedEmployees[filial]?.length || 0} colaboradores
+                  {groupedColaboradores[departamento]?.length || 0} colaboradores
                 </Badge>
               </div>
             </AccordionTrigger>
@@ -320,33 +339,35 @@ export default function Employees() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nome</TableHead>
-                        <TableHead>Função</TableHead>
+                        <TableHead>Cargo</TableHead>
                         <TableHead>E-mail</TableHead>
                         <TableHead>Telefone</TableHead>
-                        <TableHead>Valor Diária</TableHead>
-                        <TableHead>Valor Pernoite</TableHead>
+                        <TableHead>Salário</TableHead>
+                        <TableHead>Admissão</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {groupedEmployees[filial]?.map((employee) => (
-                        <TableRow key={employee.id}>
-                          <TableCell className="font-medium">{employee.nome}</TableCell>
-                          <TableCell>{employee.funcao}</TableCell>
-                          <TableCell>{employee.email}</TableCell>
-                          <TableCell>{employee.telefone}</TableCell>
-                          <TableCell>R$ {employee.valorDiaria.toFixed(2)}</TableCell>
-                          <TableCell>R$ {employee.valorPernoite.toFixed(2)}</TableCell>
+                      {groupedColaboradores[departamento]?.map((colaborador) => (
+                        <TableRow key={colaborador.id}>
+                          <TableCell className="font-medium">{colaborador.nome}</TableCell>
+                          <TableCell>{colaborador.cargo || '-'}</TableCell>
+                          <TableCell>{colaborador.email || '-'}</TableCell>
+                          <TableCell>{colaborador.telefone || '-'}</TableCell>
+                          <TableCell>{colaborador.salario ? `R$ ${colaborador.salario.toFixed(2)}` : '-'}</TableCell>
+                          <TableCell>{colaborador.data_admissao ? new Date(colaborador.data_admissao).toLocaleDateString('pt-BR') : '-'}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="gap-2"
-                                onClick={() => openWhatsApp(employee.telefone)}
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                              </Button>
+                              {colaborador.telefone && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  onClick={() => openWhatsApp(colaborador.telefone)}
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button size="sm" variant="outline" className="gap-2">
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -354,7 +375,7 @@ export default function Employees() {
                                 size="sm"
                                 variant="outline"
                                 className="gap-2 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteEmployee(employee.id)}
+                                onClick={() => handleDeleteColaborador(colaborador.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -364,7 +385,7 @@ export default function Employees() {
                       )) || (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center text-muted-foreground">
-                            Nenhum colaborador encontrado nesta filial
+                            Nenhum colaborador encontrado neste departamento
                           </TableCell>
                         </TableRow>
                       )}
