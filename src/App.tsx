@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { PersistentSidebarProvider } from "@/components/layout/PersistentSidebarProvider";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Header } from "@/components/layout/Header";
 import Index from "./pages/Index";
@@ -29,7 +29,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <PersistentSidebarProvider>
+          <SidebarProvider>
             <div className="min-h-screen flex w-full bg-background">
               <AppSidebar />
               
@@ -53,12 +53,13 @@ const App = () => (
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/ai" element={<AI />} />
                     <Route path="/reports" element={<Reports />} />
+                    <Route path="/scheduling" element={<Scheduling />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
               </div>
             </div>
-          </PersistentSidebarProvider>
+          </SidebarProvider>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
