@@ -71,6 +71,12 @@ const navigationItems = [
     icon: CreditCard, 
     modules: ["allowances"] 
   },
+  { 
+    title: "Programação", 
+    url: "/scheduling", 
+    icon: FileText, 
+    modules: ["scheduling"] 
+  },
 ];
 
 const adminItems = [

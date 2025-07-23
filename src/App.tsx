@@ -18,6 +18,7 @@ import Allowances from "./pages/Allowances";
 import Settings from "./pages/Settings";
 import AI from "./pages/AI";
 import Reports from "./pages/Reports";
+import Scheduling from "./pages/Scheduling";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
