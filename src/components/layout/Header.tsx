@@ -1,4 +1,4 @@
-import { User, HelpCircle, MessageCircle, Settings } from "lucide-react";
+import { User, HelpCircle, MessageCircle, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -9,18 +9,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   companyName?: string;
-  userName?: string;
-  userRole?: string;
 }
 
 export function Header({ 
-  companyName = "Empresa ERP", 
-  userName = "Usuário", 
-  userRole = "Administrador" 
+  companyName = "ERP Corporativo"
 }: HeaderProps) {
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro no logout",
+        description: "Ocorreu um erro ao sair do sistema.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const userName = user?.name || user?.email?.split('@')[0] || "Usuário";
+  const userRole = user?.role || "Usuário";
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase() || "U";
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="flex h-16 items-center justify-between px-4">
@@ -50,7 +70,7 @@ export function Header({
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder-avatar.png" alt={userName} />
                   <AvatarFallback>
-                    {userName.charAt(0).toUpperCase()}
+                    {userInitials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:flex flex-col items-start text-sm">
@@ -69,7 +89,11 @@ export function Header({
                 Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem 
+                className="text-destructive cursor-pointer"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </DropdownMenuItem>
             </DropdownMenuContent>

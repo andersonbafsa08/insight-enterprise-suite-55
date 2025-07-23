@@ -24,8 +24,6 @@ export function MainLayout({
         <div className="flex-1 flex flex-col">
           <Header 
             companyName={companyName}
-            userName={userName}
-            userRole={userRole}
           />
           
           <main className="flex-1 p-6">
