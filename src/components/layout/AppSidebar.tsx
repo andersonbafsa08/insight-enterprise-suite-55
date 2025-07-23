@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Users,
@@ -110,7 +110,7 @@ const securityItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const { user, hasPermission: userHasPermission } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -130,7 +130,7 @@ export function AppSidebar() {
   const getNavClassName = (itemUrl: string) => {
     const active = isActive(itemUrl);
     return active 
-      ? "bg-sidebar-accent text-sidebar-primary-foreground font-medium" 
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
   };
 
@@ -147,25 +147,29 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r">
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">
-            {!collapsed && "Módulos Principais"}
+          <SidebarGroupLabel>
+            {(!collapsed || isMobile) && "Módulos Principais"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredNavigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)}
+                    tooltip={collapsed ? item.title : undefined}
+                  >
                     <NavLink 
                       to={item.url} 
                       end={item.url === "/"}
                       className={getNavClassName(item.url)}
                     >
                       <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -177,20 +181,24 @@ export function AppSidebar() {
         {/* Admin Section */}
         {filteredAdminItems.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/70">
-              {!collapsed && "Administração"}
+            <SidebarGroupLabel>
+              {(!collapsed || isMobile) && "Administração"}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {filteredAdminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)}
+                      tooltip={collapsed ? item.title : undefined}
+                    >
                       <NavLink 
                         to={item.url} 
                         className={getNavClassName(item.url)}
                       >
                         <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        <span>{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -203,20 +211,24 @@ export function AppSidebar() {
         {/* Security Section */}
         {filteredSecurityItems.length > 0 && user?.role === "Administrador" && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/70">
-              {!collapsed && "Segurança"}
+            <SidebarGroupLabel>
+              {(!collapsed || isMobile) && "Segurança"}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {filteredSecurityItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)}
+                      tooltip={collapsed ? item.title : undefined}
+                    >
                       <NavLink 
                         to={item.url} 
                         className={getNavClassName(item.url)}
                       >
                         <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        <span>{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
