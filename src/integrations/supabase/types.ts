@@ -14,6 +14,312 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajudas_custo: {
+        Row: {
+          aprovado_por: string | null
+          cliente_id: string | null
+          colaborador_id: string | null
+          comprovante_url: string | null
+          created_at: string
+          data_aprovacao: string | null
+          data_gasto: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          aprovado_por?: string | null
+          cliente_id?: string | null
+          colaborador_id?: string | null
+          comprovante_url?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          data_gasto: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          aprovado_por?: string | null
+          cliente_id?: string | null
+          colaborador_id?: string | null
+          comprovante_url?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          data_gasto?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          cnpj_cpf: string | null
+          contato_responsavel: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          cnpj_cpf?: string | null
+          contato_responsavel?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          cnpj_cpf?: string | null
+          contato_responsavel?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      colaboradores: {
+        Row: {
+          cargo: string | null
+          cep: string | null
+          cidade: string | null
+          cpf: string | null
+          created_at: string
+          data_admissao: string | null
+          departamento: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          salario: number | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cargo?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          departamento?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          salario?: number | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cargo?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          departamento?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          salario?: number | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      escolta: {
+        Row: {
+          certificacoes: string | null
+          created_at: string
+          empresa: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          certificacoes?: string | null
+          created_at?: string
+          empresa?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          certificacoes?: string | null
+          created_at?: string
+          empresa?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      estoque: {
+        Row: {
+          categoria: string
+          codigo_interno: string | null
+          created_at: string
+          data_validade: string | null
+          fornecedor: string | null
+          id: string
+          localizacao: string | null
+          nome: string
+          observacoes: string | null
+          quantidade_atual: number
+          quantidade_maxima: number | null
+          quantidade_minima: number | null
+          status: string
+          subcategoria: string | null
+          unidade_medida: string
+          updated_at: string
+          valor_unitario: number | null
+        }
+        Insert: {
+          categoria: string
+          codigo_interno?: string | null
+          created_at?: string
+          data_validade?: string | null
+          fornecedor?: string | null
+          id?: string
+          localizacao?: string | null
+          nome: string
+          observacoes?: string | null
+          quantidade_atual?: number
+          quantidade_maxima?: number | null
+          quantidade_minima?: number | null
+          status?: string
+          subcategoria?: string | null
+          unidade_medida?: string
+          updated_at?: string
+          valor_unitario?: number | null
+        }
+        Update: {
+          categoria?: string
+          codigo_interno?: string | null
+          created_at?: string
+          data_validade?: string | null
+          fornecedor?: string | null
+          id?: string
+          localizacao?: string | null
+          nome?: string
+          observacoes?: string | null
+          quantidade_atual?: number
+          quantidade_maxima?: number | null
+          quantidade_minima?: number | null
+          status?: string
+          subcategoria?: string | null
+          unidade_medida?: string
+          updated_at?: string
+          valor_unitario?: number | null
+        }
+        Relationships: []
+      }
+      frota: {
+        Row: {
+          ano: number | null
+          capacidade: string | null
+          created_at: string
+          data_aquisicao: string | null
+          id: string
+          marca: string
+          modelo: string
+          observacoes: string | null
+          placa: string
+          quilometragem: number | null
+          status: string
+          tipo: string
+          updated_at: string
+          valor_aquisicao: number | null
+        }
+        Insert: {
+          ano?: number | null
+          capacidade?: string | null
+          created_at?: string
+          data_aquisicao?: string | null
+          id?: string
+          marca: string
+          modelo: string
+          observacoes?: string | null
+          placa: string
+          quilometragem?: number | null
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor_aquisicao?: number | null
+        }
+        Update: {
+          ano?: number | null
+          capacidade?: string | null
+          created_at?: string
+          data_aquisicao?: string | null
+          id?: string
+          marca?: string
+          modelo?: string
+          observacoes?: string | null
+          placa?: string
+          quilometragem?: number | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor_aquisicao?: number | null
+        }
+        Relationships: []
+      }
       programacoes: {
         Row: {
           cliente_id: string
@@ -74,6 +380,54 @@ export type Database = {
           tipo?: string
           updated_at?: string
           veiculo_id?: string | null
+        }
+        Relationships: []
+      }
+      solicitacoes: {
+        Row: {
+          aprovado_por: string | null
+          created_at: string
+          data_aprovacao: string | null
+          data_necessidade: string | null
+          descricao: string
+          id: string
+          observacoes: string | null
+          prioridade: string
+          solicitante_id: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aprovado_por?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          data_necessidade?: string | null
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          prioridade?: string
+          solicitante_id?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aprovado_por?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          data_necessidade?: string | null
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          prioridade?: string
+          solicitante_id?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
         }
         Relationships: []
       }
