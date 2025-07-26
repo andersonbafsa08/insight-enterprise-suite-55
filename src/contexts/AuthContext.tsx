@@ -1,9 +1,20 @@
 import { createContext, useContext, ReactNode } from "react";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { AuthContextType as SupabaseAuthContextType } from "@/types/supabase-auth";
-import { PermissionAction } from "@/types/auth";
+import { useAuth as useAuthHook } from "@/hooks/useAuth";
+import { PermissionAction, ROLE_PERMISSIONS, UserRole } from "@/types/auth";
+import { User, Session } from '@supabase/supabase-js';
+import type { UserProfile } from '@/types/auth';
 
-interface AuthContextType extends SupabaseAuthContextType {
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  profile: UserProfile | null;
+  role: UserRole | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, metadata?: { display_name?: string; department?: string }) => Promise<{ error: string | null }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
   hasPermission: (module: string, action: PermissionAction) => boolean;
   // Mantém compatibilidade com código existente
   login: (email: string, password: string) => Promise<boolean>;
@@ -25,27 +36,32 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const supabaseAuth = useSupabaseAuth();
+  const auth = useAuthHook();
 
-  // Implementação temporária de permissões - será refinada na Fase 4
+  // Implementação de permissões baseada em roles
   const hasPermission = (module: string, action: PermissionAction): boolean => {
-    // Por enquanto, usuários autenticados têm todas as permissões
-    // Isso será implementado com base em roles na Fase 4
-    return supabaseAuth.isAuthenticated;
+    if (!auth.isAuthenticated || !auth.role) {
+      return false;
+    }
+
+    const rolePermissions = ROLE_PERMISSIONS[auth.role];
+    const modulePermission = rolePermissions.find(p => p.module === module);
+    
+    return modulePermission ? modulePermission.actions.includes(action) : false;
   };
 
   // Adapters para manter compatibilidade
   const login = async (email: string, password: string): Promise<boolean> => {
-    const result = await supabaseAuth.signIn(email, password);
+    const result = await auth.signIn(email, password);
     return !result.error;
   };
 
   const logout = async (): Promise<void> => {
-    await supabaseAuth.signOut();
+    await auth.signOut();
   };
 
   const authValue: AuthContextType = {
-    ...supabaseAuth,
+    ...auth,
     hasPermission,
     login,
     logout,

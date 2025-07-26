@@ -38,8 +38,8 @@ export function Header({
     }
   };
 
-  const userName = user?.name || user?.email?.split('@')[0] || "Usuário";
-  const userRole = user?.role || "Usuário";
+  const userName = user?.email?.split('@')[0] || "Usuário";
+  const userRole = "Usuário";
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase() || "U";
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">

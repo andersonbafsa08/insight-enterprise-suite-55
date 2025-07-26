@@ -87,7 +87,7 @@ export default function Auth() {
     }
 
     const result = await signUp(signupForm.email, signupForm.password, {
-      name: signupForm.name,
+      display_name: signupForm.name,
     });
     
     if (result.error) {
