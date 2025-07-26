@@ -40,11 +40,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Implementação de permissões baseada em roles
   const hasPermission = (module: string, action: PermissionAction): boolean => {
+    // Early return if not authenticated or no role
     if (!auth.isAuthenticated || !auth.role) {
       return false;
     }
 
+    // Debug logging to understand the role value
+    console.log('Auth role:', auth.role, 'Type:', typeof auth.role);
+    console.log('Available roles:', Object.keys(ROLE_PERMISSIONS));
+
+    // Get role permissions with null check
     const rolePermissions = ROLE_PERMISSIONS[auth.role];
+    if (!rolePermissions || !Array.isArray(rolePermissions)) {
+      console.warn(`No permissions found for role: ${auth.role}`);
+      return false;
+    }
+
+    // Find module permission
     const modulePermission = rolePermissions.find(p => p.module === module);
     
     return modulePermission ? modulePermission.actions.includes(action) : false;
