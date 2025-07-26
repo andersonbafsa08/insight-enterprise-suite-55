@@ -35,12 +35,12 @@ export function useAuth() {
                   .from('profiles')
                   .select('*')
                   .eq('user_id', session.user.id)
-                  .single(),
+                  .maybeSingle(),
                 supabase
                   .from('user_roles')
                   .select('role')
                   .eq('user_id', session.user.id)
-                  .single()
+                  .maybeSingle()
               ]);
 
               setAuthState(prev => ({
@@ -75,12 +75,12 @@ export function useAuth() {
                 .from('profiles')
                 .select('*')
                 .eq('user_id', session.user.id)
-                .single(),
+                .maybeSingle(),
               supabase
                 .from('user_roles')
                 .select('role')
                 .eq('user_id', session.user.id)
-                .single()
+                .maybeSingle()
             ]);
 
             setAuthState(prev => ({
