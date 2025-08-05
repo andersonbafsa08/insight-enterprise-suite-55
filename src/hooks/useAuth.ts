@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import type { UserRole, UserProfile, UserRoleEntry } from '@/types/auth';
@@ -106,7 +106,8 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  // Memoized auth functions to prevent unnecessary re-renders
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -121,9 +122,9 @@ export function useAuth() {
     } catch (error) {
       return { error: 'Erro inesperado durante o login' };
     }
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, metadata?: { display_name?: string; department?: string }) => {
+  const signUp = useCallback(async (email: string, password: string, metadata?: { display_name?: string; department?: string }) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -144,17 +145,17 @@ export function useAuth() {
     } catch (error) {
       return { error: 'Erro inesperado durante o cadastro' };
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
+  }, []);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
       const redirectUrl = `${window.location.origin}/auth?reset=true`;
       
@@ -170,13 +171,14 @@ export function useAuth() {
     } catch (error) {
       return { error: 'Erro inesperado durante a redefinição de senha' };
     }
-  };
+  }, []);
 
-  return {
+  // Memoize the return value to prevent unnecessary re-renders
+  return useMemo(() => ({
     ...authState,
     signIn,
     signUp,
     signOut,
     resetPassword
-  };
+  }), [authState, signIn, signUp, signOut, resetPassword]);
 }

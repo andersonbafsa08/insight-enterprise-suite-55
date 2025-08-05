@@ -1,6 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardCardProps {
   title: string;
@@ -16,9 +17,32 @@ interface DashboardCardProps {
     variant?: "default" | "secondary" | "destructive" | "outline";
   };
   className?: string;
+  isLoading?: boolean;
 }
 
-export function DashboardCard({
+// Loading skeleton for dashboard card
+export function DashboardCardSkeleton({ className }: { className?: string }) {
+  return (
+    <Card className={`transition-shadow hover:shadow-md ${className}`}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-4 rounded" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-5 w-12 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const DashboardCardComponent = ({
   title,
   value,
   description,
@@ -26,9 +50,14 @@ export function DashboardCard({
   trend,
   badge,
   className,
-}: DashboardCardProps) {
+  isLoading = false,
+}: DashboardCardProps) => {
+  if (isLoading) {
+    return <DashboardCardSkeleton className={className} />;
+  }
+
   return (
-    <Card className={`transition-shadow hover:shadow-md ${className}`}>
+    <Card className={`transition-shadow hover:shadow-md animate-fade-in ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
@@ -77,4 +106,7 @@ export function DashboardCard({
       </CardContent>
     </Card>
   );
-}
+};
+
+// Memoized component to prevent unnecessary re-renders
+export const DashboardCard = memo(DashboardCardComponent);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,7 +24,7 @@ export const useSolicitacoes = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchSolicitacoes = async () => {
+  const fetchSolicitacoes = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -44,9 +44,9 @@ export const useSolicitacoes = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const createSolicitacao = async (solicitacao: Omit<Solicitacao, 'id' | 'created_at' | 'updated_at'>) => {
+  const createSolicitacao = useCallback(async (solicitacao: Omit<Solicitacao, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('solicitacoes')
@@ -70,9 +70,9 @@ export const useSolicitacoes = () => {
       });
       return { data: null, error: err.message };
     }
-  };
+  }, [toast]);
 
-  const updateSolicitacao = async (id: string, updates: Partial<Solicitacao>) => {
+  const updateSolicitacao = useCallback(async (id: string, updates: Partial<Solicitacao>) => {
     try {
       const { data, error } = await supabase
         .from('solicitacoes')
@@ -97,9 +97,9 @@ export const useSolicitacoes = () => {
       });
       return { data: null, error: err.message };
     }
-  };
+  }, [toast]);
 
-  const deleteSolicitacao = async (id: string) => {
+  const deleteSolicitacao = useCallback(async (id: string) => {
     try {
       const { error } = await supabase
         .from('solicitacoes')
@@ -122,38 +122,48 @@ export const useSolicitacoes = () => {
       });
       return { error: err.message };
     }
-  };
+  }, [toast]);
 
-  const aprovarSolicitacao = async (id: string, aprovadorId: string) => {
+  const aprovarSolicitacao = useCallback(async (id: string, aprovadorId: string) => {
     return updateSolicitacao(id, {
       status: 'Aprovada',
       aprovado_por: aprovadorId,
       data_aprovacao: new Date().toISOString(),
     });
-  };
+  }, [updateSolicitacao]);
 
-  const rejeitarSolicitacao = async (id: string) => {
+  const rejeitarSolicitacao = useCallback(async (id: string) => {
     return updateSolicitacao(id, {
       status: 'Rejeitada',
     });
-  };
+  }, [updateSolicitacao]);
 
-  const getSolicitacoesPorStatus = (status: string) => {
+  // Memoized computed values
+  const getSolicitacoesPorStatus = useCallback((status: string) => {
     return solicitacoes.filter(s => s.status === status);
-  };
+  }, [solicitacoes]);
 
-  const getSolicitacoesPorTipo = (tipo: string) => {
+  const getSolicitacoesPorTipo = useCallback((tipo: string) => {
     return solicitacoes.filter(s => s.tipo === tipo);
-  };
+  }, [solicitacoes]);
+
+  // Statistics for dashboard
+  const stats = useMemo(() => ({
+    total: solicitacoes.length,
+    pendentes: solicitacoes.filter(s => s.status === 'Pendente').length,
+    aprovadas: solicitacoes.filter(s => s.status === 'Aprovada').length,
+    rejeitadas: solicitacoes.filter(s => s.status === 'Rejeitada').length,
+  }), [solicitacoes]);
 
   useEffect(() => {
     fetchSolicitacoes();
-  }, []);
+  }, [fetchSolicitacoes]);
 
-  return {
+  return useMemo(() => ({
     solicitacoes,
     isLoading,
     error,
+    stats,
     createSolicitacao,
     updateSolicitacao,
     deleteSolicitacao,
@@ -162,5 +172,18 @@ export const useSolicitacoes = () => {
     refetch: fetchSolicitacoes,
     getSolicitacoesPorStatus,
     getSolicitacoesPorTipo,
-  };
+  }), [
+    solicitacoes,
+    isLoading,
+    error,
+    stats,
+    createSolicitacao,
+    updateSolicitacao,
+    deleteSolicitacao,
+    aprovarSolicitacao,
+    rejeitarSolicitacao,
+    fetchSolicitacoes,
+    getSolicitacoesPorStatus,
+    getSolicitacoesPorTipo,
+  ]);
 };
