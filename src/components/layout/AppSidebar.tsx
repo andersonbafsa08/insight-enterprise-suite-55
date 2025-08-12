@@ -39,43 +39,43 @@ const navigationItems = [
     title: "Clientes", 
     url: "/clients", 
     icon: Users, 
-    modules: ["clients"] 
+    modules: ["clientes"] 
   },
   { 
     title: "Solicitações", 
     url: "/requests", 
     icon: Building2, 
-    modules: ["requests"] 
+    modules: ["solicitacoes"] 
   },
   { 
     title: "Colaboradores", 
     url: "/employees", 
     icon: UserCheck, 
-    modules: ["employees"] 
+    modules: ["colaboradores"] 
   },
   { 
     title: "Estoque", 
     url: "/stock", 
     icon: Package, 
-    modules: ["stock"] 
+    modules: ["estoque"] 
   },
   { 
     title: "Frota", 
     url: "/fleet", 
     icon: Car, 
-    modules: ["fleet"] 
+    modules: ["frota"] 
   },
   { 
     title: "Diárias", 
     url: "/allowances", 
     icon: CreditCard, 
-    modules: ["allowances"] 
+    modules: ["ajudas_custo"] 
   },
   { 
     title: "Programação", 
     url: "/scheduling", 
     icon: FileText, 
-    modules: ["scheduling"] 
+    modules: ["programacoes"] 
   },
 ];
 
@@ -84,7 +84,7 @@ const adminItems = [
     title: "Configurações", 
     url: "/settings", 
     icon: Settings, 
-    modules: ["settings"] 
+    modules: ["configuracoes"] 
   },
   { 
     title: "IA", 
@@ -96,7 +96,7 @@ const adminItems = [
     title: "Relatórios", 
     url: "/reports", 
     icon: BarChart3, 
-    modules: ["reports"] 
+    modules: ["relatorios"] 
   },
 ];
 
@@ -105,13 +105,13 @@ const securityItems = [
     title: "Auditoria", 
     url: "/audit", 
     icon: Shield, 
-    modules: ["settings"] 
+    modules: ["configuracoes"] 
   },
   { 
     title: "Logs", 
     url: "/logs", 
     icon: FileText, 
-    modules: ["settings"] 
+    modules: ["configuracoes"] 
   },
 ];
 

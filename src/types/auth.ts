@@ -81,6 +81,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { module: 'relatorios', actions: ['read'] }
   ],
   usuario: [
+    { module: 'dashboard', actions: ['read'] },
     { module: 'solicitacoes', actions: ['read', 'write'] },
     { module: 'ajudas_custo', actions: ['read', 'write'] }
   ]
